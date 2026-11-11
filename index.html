@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Roue Anti-Stress</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#10222e;--bg2:#183445;--ink:#f4f7f6;--mut:#9fb7c2;--gold:#ffc94d;--card:#1d3b4d}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;font-family:'Nunito',system-ui,sans-serif;color:var(--ink);
+background:radial-gradient(circle at 50% 30%,var(--bg2),var(--bg) 70%);padding:18px;display:flex;flex-direction:column;align-items:center}
+h1{font-family:'Fredoka',sans-serif;font-size:clamp(1.8rem,5vw,3rem);letter-spacing:.04em;text-align:center;color:var(--gold)}
+.sub{color:var(--mut);text-align:center;margin:4px 0 14px;font-size:clamp(.95rem,2.4vw,1.15rem)}
+main{display:flex;gap:28px;align-items:flex-start;justify-content:center;flex-wrap:wrap;width:100%;max-width:1100px}
+.stage{position:relative;width:min(88vw,520px);aspect-ratio:1}
+#wheel{width:100%;height:100%;display:block;filter:drop-shadow(0 12px 28px #0008)}
+.pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:42px solid var(--gold);filter:drop-shadow(0 3px 4px #0009);z-index:3}
+#spin{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26%;aspect-ratio:1;border-radius:50%;border:5px solid var(--gold);
+background:#10222e;color:var(--gold);font-family:'Fredoka',sans-serif;font-weight:700;font-size:clamp(.6rem,2.3vw,.95rem);line-height:1.15;cursor:pointer;z-index:2;box-shadow:0 0 0 6px #0004,0 6px 18px #000a;transition:transform .15s,background .2s}
+#spin:hover:not(:disabled){background:var(--gold);color:#10222e;transform:translate(-50%,-50%) scale(1.06)}
+#spin:disabled{opacity:.55;cursor:not-allowed}
+#spin:focus-visible,button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+aside{width:min(88vw,330px);background:var(--card);border-radius:16px;padding:16px;box-shadow:0 8px 24px #0005}
+aside h2{font-family:'Fredoka',sans-serif;font-size:1.15rem;margin-bottom:8px}
+.count{font-size:1.5rem;font-weight:800;color:var(--gold)}
+.bar{height:8px;background:#0006;border-radius:6px;margin:6px 0 14px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .4s}
+#hist{list-style:none;padding:0;max-height:210px;overflow:auto;font-size:.92rem}
+#hist li{padding:6px 8px;border-left:5px solid;margin-bottom:5px;background:#0003;border-radius:0 8px 8px 0}
+#hist li small{display:block;color:var(--mut)}
+.row{display:flex;gap:8px;margin-top:12px}
+.btn{font:inherit;font-weight:800;border:0;border-radius:10px;padding:9px 14px;cursor:pointer;background:#2b5069;color:var(--ink)}
+.btn:hover{background:#3a6784}.btn.gold{background:var(--gold);color:#10222e}.btn.gold:hover{background:#ffd978}
+.ov{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.ov.on{display:flex}
+.modal{background:#fff;color:#16303f;border-radius:20px;max-width:620px;width:100%;overflow:hidden;animation:pop .35s cubic-bezier(.2,1.4,.4,1);max-height:92vh;overflow-y:auto}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+.mh{padding:16px 22px;color:#fff;font-family:'Fredoka',sans-serif;font-size:1.35rem}
+.mb{padding:22px}
+.q{font-size:clamp(1.1rem,3vw,1.4rem);font-weight:800;line-height:1.4}
+.tag{display:inline-block;margin-top:10px;font-size:.85rem;background:#e9f1f4;border-radius:20px;padding:3px 10px}
+.ans{margin-top:16px;padding:14px;background:#eef8f1;border-left:5px solid #2e9e6b;border-radius:8px;display:none;line-height:1.55}
+.ans.on{display:block;animation:pop .3s}
+.mf{display:flex;gap:10px;padding:0 22px 22px;flex-wrap:wrap}
+.mf .btn{background:#e3ecf0;color:#16303f}.mf .btn.gold{background:#16303f;color:#fff}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:20}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<h1>LA ROUE ANTI-STRESS</h1>
+<p class="sub">Testez vos connaissances et découvrez comment gérer le stress !</p>
+
+<main>
+  <div class="stage">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="1000" height="1000" aria-label="Roue des catégories"></canvas>
+    <button id="spin">TOURNER<br>LA ROUE</button>
+  </div>
+  <aside>
+    <h2>Progression</h2>
+    <div><span class="count" id="cnt">0 / 0</span> questions utilisées</div>
+    <div class="bar"><i id="barfill"></i></div>
+    <h2>Historique</h2>
+    <ul id="hist"><li style="border-color:#456">Aucun tirage pour l'instant.</li></ul>
+    <div class="row">
+      <button class="btn" id="snd">🔊 Son activé</button>
+      <button class="btn" id="reset">↺ Recommencer</button>
+    </div>
+  </aside>
+</main>
+
+<div class="ov" id="ov">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mh" id="mh"></div>
+    <div class="mb">
+      <div class="q" id="mq"></div>
+      <span class="tag" id="mt"></span>
+      <div class="ans" id="ma"></div>
+    </div>
+    <div class="mf">
+      <button class="btn gold" id="show">Afficher la réponse</button>
+      <button class="btn" id="cont">Continuer</button>
+    </div>
+  </div>
+</div>
+<canvas id="fx"></canvas>
+
+<script>
+/* ============================================================
+   1. DONNÉES — 6 catégories, chacune avec ses questions/réponses
+   ============================================================ */
+const CATEGORIES = [
+ {name:"Définition du stress", short:"Définition", color:"#e4572e", icon:"🧠", items:[
+  {q:"Qu'est-ce que le stress ?", a:"Le stress est la réaction naturelle de l'organisme face à une situation perçue comme une menace ou une exigence (examen, danger, pression). Il mobilise le corps et l'esprit pour s'adapter."},
+  {q:"Le stress est-il toujours négatif ?", a:"Non. À dose modérée, il motive, stimule l'attention et la performance (stress positif ou « eustress »). Il devient nuisible quand il est trop intense ou trop long."},
+  {q:"Comment le stress influence-t-il notre corps et notre esprit ?", a:"Corps : cœur qui s'accélère, muscles tendus, respiration rapide, fatigue. Esprit : inquiétude, difficulté de concentration, irritabilité, pensées négatives."}]},
+ {name:"Les types de stress", short:"Types", color:"#f2a93b", icon:"⚖️", items:[
+  {q:"Quelle est la différence entre le stress positif et le stress négatif ?", a:"Le stress positif est stimulant et de courte durée : il aide à agir et à se dépasser. Le stress négatif est excessif ou prolongé : il épuise, bloque et nuit à la santé."},
+  {q:"Donnez un exemple de stress positif.", a:"Par exemple : l'excitation avant une compétition sportive, avant un exposé préparé ou avant un spectacle, qui donne de l'énergie et de la motivation."},
+  {q:"Comment le stress négatif peut-il affecter notre concentration ?", a:"Il occupe l'esprit avec des inquiétudes, provoque des blocages et des oublis, et empêche de rester attentif et de bien mémoriser."}]},
+ {name:"Les causes du stress", short:"Causes", color:"#3aa675", icon:"🔍", items:[
+  {q:"Citez trois causes du stress.", a:"Exemples : les examens et la pression scolaire, le manque de temps / la surcharge de travail, les conflits (famille, amis), la peur de l'échec, le manque de sommeil, les changements importants."},
+  {q:"Pourquoi les examens peuvent-ils provoquer du stress ?", a:"Parce qu'ils sont évalués, comportent un enjeu (notes, avenir), de la pression de réussir, la peur d'échouer ou de décevoir, et un temps limité."},
+  {q:"Comment le manque de sommeil peut-il augmenter le stress ?", a:"Un corps fatigué récupère mal et gère moins bien les émotions : irritabilité, baisse de concentration et de patience. Les problèmes paraissent alors plus lourds."}]},
+ {name:"Symptômes et conséquences", short:"Symptômes", color:"#2a9fd6", icon:"💓", items:[
+  {q:"Citez deux symptômes physiques du stress.", a:"Maux de tête, maux de ventre, palpitations, transpiration, tensions musculaires, troubles du sommeil, fatigue."},
+  {q:"Citez deux symptômes psychologiques.", a:"Anxiété, nervosité, irritabilité, tristesse, difficulté de concentration, sentiment d'être dépassé, peur."},
+  {q:"Quelles sont les conséquences du stress sur les résultats scolaires ?", a:"Baisse de concentration et de mémoire, blocages en examen, démotivation, absences ou fatigue : les résultats peuvent diminuer."},
+  {q:"Comment le stress peut-il affecter nos relations avec les autres ?", a:"Il rend irritable ou agressif, pousse à s'isoler, provoque des disputes et des malentendus, et diminue l'écoute et la patience."}]},
+ {name:"Méthodes pour gérer le stress", short:"Méthodes", color:"#8e5bd6", icon:"🧘", items:[
+  {q:"Citez trois méthodes pour gérer le stress.", a:"Respiration profonde, activité physique, organisation du temps, sommeil suffisant, parler à une personne de confiance, relaxation, pensée positive, pauses."},
+  {q:"Pourquoi faut-il organiser son temps ?", a:"Pour éviter l'accumulation et la précipitation : un planning réaliste fixe des priorités, réduit la surcharge et donne un sentiment de contrôle."},
+  {q:"Quel est le rôle de la respiration profonde ?", a:"Elle ralentit le rythme cardiaque, détend les muscles et calme le système nerveux, ce qui apaise rapidement l'anxiété."},
+  {q:"Pourquoi le sport aide-t-il à réduire le stress ?", a:"L'effort évacue les tensions et libère des endorphines (hormones du bien-être). Il améliore aussi le sommeil et l'humeur."}]},
+ {name:"Situations pratiques", short:"Situations", color:"#d6457f", icon:"🎯", practical:true, items:[
+  {q:"Tu as un examen demain et tu n'as pas encore terminé tes révisions. Que fais-tu ?", a:"Garder son calme, faire la liste de ce qui reste, prioriser les points essentiels, réviser par blocs avec de courtes pauses, éviter les distractions, puis dormir suffisamment."},
+  {q:"Tu dois présenter un exposé devant toute la classe et tu commences à paniquer. Quelle méthode peux-tu utiliser ?", a:"Respirer lentement et profondément, parler doucement, se concentrer sur le message, regarder un camarade bienveillant et se rappeler qu'on s'est préparé."},
+  {q:"Tu as beaucoup de travail et tu ne sais plus par où commencer. Comment réagis-tu ?", a:"Tout écrire, classer par urgence et importance, découper en petites étapes, commencer par la plus simple ou la plus urgente, et cocher au fur et à mesure."},
+  {q:"Tu as peur d'échouer à un examen. Comment peux-tu gérer cette peur ?", a:"Bien se préparer, remplacer les pensées négatives par des pensées réalistes, respirer, en parler à un proche ou à un enseignant, et voir l'échec comme une occasion d'apprendre."},
+  {q:"Tu es fatigué et tu n'arrives plus à te concentrer. Que dois-tu faire ?", a:"Faire une pause, s'aérer, boire de l'eau, bouger un peu, puis reprendre. Si c'est récurrent, dormir davantage et planifier des temps de repos."}]}
+];
+
+/* Liste plate de toutes les questions, avec l'index de leur catégorie */
+const ALL = [];
+CATEGORIES.forEach((c,ci)=>c.items.forEach((it,qi)=>ALL.push({cat:ci,q:it.q,a:it.a,id:ci+"-"+qi})));
+
+/* ============================================================
+   2. ÉTAT DU JEU
+   ============================================================ */
+let bag = [];            // questions pas encore tirées dans le cycle courant (déjà mélangées)
+let used = 0;            // nombre utilisées dans le cycle courant
+let lastCat = -1, lastId = null;
+let rotation = 0;        // angle actuel de la roue (degrés, cumulé)
+let spinning = false, soundOn = true, current = null;
+const N = CATEGORIES.length, SEG = 360/N;
+
+/* Mélange Fisher-Yates : vrai mélange uniforme */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+/* Rebrasse le sac quand toutes les questions ont été utilisées.
+   On évite que la 1re question du nouveau sac soit celle qui vient de sortir. */
+function refill(){
+  bag = shuffle(ALL);
+  
+  used = 0;
+}
+/* Tirage : on prend la 1re question du sac dont la catégorie diffère de la
+   précédente (si possible) → jamais deux fois le même résultat de suite. */
+function drawQuestion(){
+  if(bag.length===0) refill();
+  // Candidats : catégorie différente de la précédente (si possible).
+  // Parmi eux, on privilégie la catégorie la plus "pleine" pour éviter
+  // de finir un cycle avec une seule catégorie restante.
+  const left = {}; bag.forEach(x=>left[x.cat]=(left[x.cat]||0)+1);
+  let k = -1, best = -1;
+  bag.forEach((x,i)=>{ if(x.cat!==lastCat && left[x.cat]>best){ best=left[x.cat]; k=i; } });
+  if(k<0) k = 0;
+  const pick = bag.splice(k,1)[0];
+  used++;
+  lastCat = pick.cat; lastId = pick.id;
+  return pick;
+}
+
+/* ============================================================
+   3. DESSIN DE LA ROUE (canvas)
+   ============================================================ */
+const cv = document.getElementById('wheel'), ctx = cv.getContext('2d');
+function drawWheel(){
+  const W=cv.width, R=W/2-14;
+  ctx.clearRect(0,0,W,W);
+  ctx.save(); ctx.translate(W/2,W/2);
+  ctx.beginPath(); ctx.arc(0,0,R+12,0,7); ctx.fillStyle="#ffc94d"; ctx.fill(); // bordure dorée
+  ctx.rotate(rotation*Math.PI/180);
+  CATEGORIES.forEach((c,i)=>{
+    // segment i : du haut (-90°) en sens horaire
+    const a0=(-90+i*SEG)*Math.PI/180, a1=(-90+(i+1)*SEG)*Math.PI/180;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,a0,a1); ctx.closePath();
+    ctx.fillStyle=c.color; ctx.fill();
+    ctx.lineWidth=5; ctx.strokeStyle="#10222e"; ctx.stroke();
+    ctx.save(); ctx.rotate((a0+a1)/2); ctx.textAlign="right"; ctx.fillStyle="#fff";
+    ctx.font="700 40px Fredoka, sans-serif"; ctx.shadowColor="#0006"; ctx.shadowBlur=4;
+    ctx.fillText(c.short, R-34, 14);
+    ctx.font="44px sans-serif"; ctx.textAlign="left"; ctx.fillText(c.icon, R*0.30+10, 15);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+/* Segment situé sous la flèche (en haut) pour un angle donné */
+function segmentAt(rot){
+  const a = (((-rot)%360)+360)%360;
+  return Math.floor(a/SEG)%N;
+}
+
+/* ============================================================
+   4. ROTATION
+   ============================================================ */
+function spin(){
+  if(spinning) return;
+  spinning = true;
+  document.getElementById('spin').disabled = true;
+  current = drawQuestion();                       // 1) on décide d'abord du résultat (aléatoire)
+  const offset = SEG*0.15 + Math.random()*SEG*0.7; // 2) position aléatoire dans la case (loin des bords)
+  const wanted = (((-(current.cat*SEG+offset))%360)+360)%360;
+  const delta = ((wanted - rotation)%360+360)%360;
+  const spins = 5 + Math.floor(Math.random()*3);    // 5 à 7 tours complets
+  const from = rotation, to = rotation + spins*360 + delta;
+  const dur = 5200 + Math.random()*1200, t0 = performance.now();
+  let lastTick = segmentAt(from);
+  (function frame(now){
+    const p = Math.min((now-t0)/dur,1), e = 1-Math.pow(1-p,4); // décélération douce
+    rotation = from + (to-from)*e;
+    const s = segmentAt(rotation);
+    if(s!==lastTick){ tick(); lastTick=s; }
+    drawWheel();
+    if(p<1) requestAnimationFrame(frame); else finish();
+  })(t0);
+}
+function finish(){
+  rotation = rotation % 360;
+  const idx = segmentAt(rotation);                 // lecture réelle de la case sous la flèche
+  const result = (idx===current.cat) ? current : null;
+  spinning = false;
+  if(!result){ console.error("Incohérence roue/question"); }
+  fanfare(); confetti();
+  updateStats(); addHistory(current);
+  setTimeout(()=>openModal(current),700);
+}
+
+/* ============================================================
+   5. MODAL / RÉSULTAT
+   ============================================================ */
+const $ = id=>document.getElementById(id);
+function openModal(item){
+  const c = CATEGORIES[item.cat];
+  $('mh').textContent = c.icon+"  "+c.name; $('mh').style.background = c.color;
+  $('mq').textContent = item.q;
+  $('mt').textContent = c.practical ? "Situation pratique : réponds, puis affiche la proposition" : "Question de cours : essaie de répondre avant d'afficher la réponse";
+  $('ma').className="ans"; $('ma').innerHTML="<b>"+(c.practical?"Proposition de solution :":"Réponse :")+"</b><br>"+item.a;
+  $('show').style.display="inline-block";
+  $('show').textContent = c.practical ? "Afficher la proposition de solution" : "Afficher la réponse";
+  $('ov').classList.add('on'); $('show').focus();
+}
+$('show').onclick = ()=>{ $('ma').classList.add('on'); $('show').style.display="none"; };
+$('cont').onclick = ()=>{ $('ov').classList.remove('on'); $('spin').disabled=false; };
+
+/* ============================================================
+   6. COMPTEUR, HISTORIQUE, RESET
+   ============================================================ */
+function updateStats(){
+  $('cnt').textContent = used+" / "+ALL.length;
+  $('barfill').style.width = (used/ALL.length*100)+"%";
+}
+function addHistory(it){
+  const c=CATEGORIES[it.cat], ul=$('hist');
+  if(!ul.dataset.on){ ul.innerHTML=""; ul.dataset.on=1; }
+  const li=document.createElement('li'); li.style.borderColor=c.color;
+  li.innerHTML="<b>"+c.icon+" "+c.name+"</b><small></small>"; li.querySelector('small').textContent=it.q;
+  ul.prepend(li);
+}
+$('reset').onclick = ()=>{
+  if(spinning) return;
+  bag=[]; used=0; lastCat=-1; lastId=null; current=null;
+  const ul=$('hist'); ul.innerHTML='<li style="border-color:#456">Aucun tirage pour l\'instant.</li>'; delete ul.dataset.on;
+  refill(); updateStats();
+};
+$('spin').onclick = spin;
+
+/* ============================================================
+   7. SONS (Web Audio) et CONFETTIS
+   ============================================================ */
+let AC=null;
+function beep(f,d,type,vol){
+  if(!soundOn) return;
+  AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.value=f; g.gain.value=vol;
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime+d);
+  o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+d);
+}
+const tick = ()=>beep(900,.05,'square',.04);
+function fanfare(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.25,'triangle',.12),i*110)); }
+$('snd').onclick = ()=>{ soundOn=!soundOn; $('snd').textContent = soundOn?"🔊 Son activé":"🔇 Son désactivé"; };
+
+const fx=$('fx'), fc=fx.getContext('2d');
+function confetti(){
+  fx.width=innerWidth; fx.height=innerHeight;
+  const cols=CATEGORIES.map(c=>c.color).concat("#ffc94d");
+  const P=Array.from({length:140},()=>({x:innerWidth/2,y:innerHeight/2,vx:(Math.random()-.5)*16,vy:-Math.random()*14-4,
+    s:5+Math.random()*7,c:cols[Math.floor(Math.random()*cols.length)],r:Math.random()*6}));
+  let f=0;
+  (function go(){
+    fc.clearRect(0,0,fx.width,fx.height);
+    P.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=.2;fc.save();fc.translate(p.x,p.y);fc.rotate(p.r);fc.fillStyle=p.c;fc.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);fc.restore();});
+    if(++f<110) requestAnimationFrame(go); else fc.clearRect(0,0,fx.width,fx.height);
+  })();
+}
+
+/* Démarrage */
+refill(); updateStats();
+document.fonts && document.fonts.ready.then(drawWheel); drawWheel();
+</script>
+</body>
+</html>
